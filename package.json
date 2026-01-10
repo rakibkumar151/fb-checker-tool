@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node local.js",
-    "build": "echo 'No build step required'"
+    "build": "echo 'Build skipped'"
   },
   "engines": {
     "node": "18.x"
