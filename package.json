@@ -1,16 +1,14 @@
 {
-  "name": "fb-checker-tool",
+  "name": "fb-fast-checker",
   "version": "1.0.0",
-  "main": "api/index.js",
+  "main": "local.js",
   "type": "module",
   "scripts": {
     "start": "node local.js",
-    "build": "echo 'Build skipped'"
-  },
-  "engines": {
-    "node": "18.x"
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.0"
   }
 }
