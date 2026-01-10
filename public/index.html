@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Line Checker & Downloader (Fast Mode)</title>
+    <title>Pro Vercel Fast Checker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #111827; color: #f3f4f6; }
@@ -11,7 +11,6 @@
         textarea::-webkit-scrollbar { width: 8px; }
         textarea::-webkit-scrollbar-track { background: #1f2937; }
         textarea::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
-        /* Checkbox styling */
         .checkbox-wrapper input:checked + div { background-color: #2563eb; border-color: #2563eb; }
         .checkbox-wrapper input:checked + div svg { display: block; }
     </style>
@@ -20,9 +19,9 @@
 
     <div class="glass w-full max-w-7xl p-6 rounded-xl shadow-2xl">
         <h1 class="text-3xl font-extrabold text-center mb-2 text-blue-500">
-            FB UID LIVE CHECKER - SUPER FAST
+            FB FAST CHECKER (VERCEL)
         </h1>
-        <p class="text-center text-gray-500 text-xs mb-6 font-mono">Checks UID at start -> Preserves Full Line</p>
+        <p class="text-center text-gray-500 text-xs mb-6 font-mono">Serverless Optimized Edition</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -42,7 +41,7 @@
 
                 <div class="flex gap-2 mt-4">
                     <button onclick="start()" id="btnStart" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
-                        🚀 START FAST CHECK
+                        🚀 START CHECK
                     </button>
                     <button onclick="stop()" id="btnStop" class="hidden flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition">
                         🛑 STOP
@@ -89,7 +88,6 @@
 
     <script>
         let run = false;
-        // ডেটা মেমোরিতে রাখার জন্য অ্যারে
         let liveDataList = [];
         let deadDataList = [];
 
@@ -103,39 +101,28 @@
             lines.forEach(line => {
                 let cleanLine = line.trim();
                 if (!cleanLine) return;
-
                 const match = cleanLine.match(/^(\d{4,})/);
-
                 if (match) {
                     const uid = match[1];
                     if (isRemoveDupes) {
-                        if (seenUIDs.has(uid)) {
-                            duplicates++;
-                            return;
-                        }
+                        if (seenUIDs.has(uid)) { duplicates++; return; }
                         seenUIDs.add(uid);
                     }
                     validData.push({ uid: uid, original: cleanLine });
                 }
             });
-
+            
             const dupLabel = document.getElementById('removedCount');
-            if (duplicates > 0) {
-                dupLabel.innerText = `Removed: ${duplicates}`;
-                dupLabel.classList.remove('hidden');
-            } else {
-                dupLabel.classList.add('hidden');
-            }
+            dupLabel.innerText = duplicates > 0 ? `Removed: ${duplicates}` : '';
+            dupLabel.classList.toggle('hidden', duplicates === 0);
             return validData;
         }
 
         async function start() {
             const rawText = document.getElementById('in').value;
             const dataList = parseLines(rawText);
-
             if (!dataList.length) return alert("No valid lines found!");
 
-            // Reset Everything
             document.getElementById('total').innerText = dataList.length;
             document.getElementById('done').innerText = '0';
             document.getElementById('live').innerText = '0';
@@ -143,19 +130,16 @@
             document.getElementById('out').value = '';
             document.getElementById('bar').style.width = '0%';
             
-            // Reset Arrays and Counts
-            liveDataList = [];
-            deadDataList = [];
-            updateDownloadCounts();
-
+            liveDataList = []; deadDataList = []; updateDownloadCounts();
             document.getElementById('btnStart').classList.add('hidden');
             document.getElementById('btnStop').classList.remove('hidden');
 
             run = true;
             let l = 0, d = 0, p = 0;
-            
-            // === UPDATE 1: BATCH সাইজ 500 করা হয়েছে ===
-            const BATCH = 500; 
+
+            // === VERCEL OPTIMIZATION: BATCH 100 ===
+            // Vercel এর টাইমআউট এড়াতে এবং ফাস্ট রাখতে ১০০ এর বেশি বাড়াবেন না
+            const BATCH = 100; 
 
             for (let i = 0; i < dataList.length; i += BATCH) {
                 if (!run) break;
@@ -164,13 +148,15 @@
                 const uidsToSend = chunk.map(item => item.uid);
                 
                 try {
-                    // === UPDATE 2: Localhost URL দেওয়া হয়েছে ===
-                    const res = await fetch('http://localhost:3000/api', {
+                    // === URL CHANGE: Relative Path for Vercel ===
+                    const res = await fetch('/api', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ uids: uidsToSend })
                     });
                     
+                    if (!res.ok) throw new Error("Server Error");
+
                     const results = await res.json();
                     
                     results.forEach(r => {
@@ -178,33 +164,23 @@
                         if (originalItem) {
                             if (r.status === 'live') {
                                 l++;
-                                // লাইভ ডেটা অ্যারেতে এবং টেক্সটবক্সে যোগ করা
                                 liveDataList.push(originalItem.original);
                                 document.getElementById('out').value += originalItem.original + '\n';
                             } else {
                                 d++;
-                                // ডেড ডেটা শুধু অ্যারেতে যোগ করা
                                 deadDataList.push(originalItem.original);
                             }
                         }
                     });
                 } catch (e) {
-                    console.error("Error", e);
-                    // সার্ভার বন্ধ থাকলে ইউজারকে জানানো
-                    alert("Error: Make sure 'node local.js' is running!");
-                    stop();
-                    return;
+                    console.error("Batch Failed", e);
                 }
 
                 p += chunk.length;
-                
-                // Update UI Counters
                 document.getElementById('done').innerText = Math.min(p, dataList.length);
                 document.getElementById('live').innerText = l;
                 document.getElementById('dead').innerText = d;
                 document.getElementById('bar').style.width = Math.round((p / dataList.length) * 100) + "%";
-                
-                // Update Download Button Counts
                 updateDownloadCounts();
             }
             stop();
@@ -221,44 +197,18 @@
             document.getElementById('dlDeadCount').innerText = deadDataList.length;
         }
 
-        // === ডাউনলোড ফাংশন ===
         function downloadTxt(type) {
-            let data = [];
-            let fileNameDefault = "";
-            let count = 0;
-
-            if (type === 'live') {
-                data = liveDataList;
-                count = data.length;
-                fileNameDefault = `Live_IDs_${count}.txt`;
-            } else {
-                data = deadDataList;
-                count = data.length;
-                fileNameDefault = `Dead_IDs_${count}.txt`;
-            }
-
-            if (count === 0) {
-                alert(`No ${type.toUpperCase()} IDs to download!`);
-                return;
-            }
-
-            // নাম চাওয়ার জন্য পপআপ
-            let fileName = prompt(`Total ${type.toUpperCase()} IDs found: ${count}\nEnter file name to save:`, fileNameDefault);
-
+            let data = type === 'live' ? liveDataList : deadDataList;
+            if (data.length === 0) return alert(`No ${type} IDs!`);
+            
+            let fileName = prompt(`Save ${data.length} ${type} IDs as:`, `${type}_ids.txt`);
             if (fileName) {
-                // নামের শেষে .txt না থাকলে লাগিয়ে দেওয়া হবে
-                if (!fileName.endsWith('.txt')) {
-                    fileName += '.txt';
-                }
-
+                if (!fileName.endsWith('.txt')) fileName += '.txt';
                 const blob = new Blob([data.join('\n')], { type: 'text/plain' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
+                a.href = url; a.download = fileName;
+                document.body.appendChild(a); a.click();
                 document.body.removeChild(a);
             }
         }
