@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import https from 'https';
 
-// Keep-Alive Agent to reuse TCP connections (Super Fast)
+// Keep-Alive Agent for Fast Connection on Vercel
 const agent = new https.Agent({
     keepAlive: true,
     keepAliveMsecs: 1000,
@@ -9,11 +9,11 @@ const agent = new https.Agent({
 });
 
 export default async function handler(req, res) {
-    // CORS Setup for Vercel
+    // CORS Setup
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
         res.status(200).end();
@@ -25,17 +25,16 @@ export default async function handler(req, res) {
     const { uids } = req.body;
     if (!uids || !Array.isArray(uids)) return res.status(400).json({ error: 'No UIDs' });
 
-    // The Checker Logic
     const checkUID = async (uid) => {
         try {
-            // Timeout set to 3 seconds to skip slow requests quickly
+            // 2.5 seconds timeout per request to prevent Vercel freeze
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 3000);
+            const timeout = setTimeout(() => controller.abort(), 2500);
 
             const response = await fetch(`https://graph.facebook.com/${uid}/picture?type=normal`, {
                 method: 'GET',
                 redirect: 'manual',
-                agent: agent, // Using Keep-Alive Agent
+                agent: agent,
                 signal: controller.signal,
                 headers: { "User-Agent": "Mozilla/5.0" }
             });
@@ -44,17 +43,16 @@ export default async function handler(req, res) {
 
             const location = response.headers.get('location') || "";
             
-            // Logic: 302 Redirect + location containing "scontent" means LIVE
             if (response.status === 302 && location.includes("scontent")) {
                 return { uid, status: "live" };
             }
             return { uid, status: "dead" };
         } catch (error) {
-            return { uid, status: "dead" }; // Network error treated as dead to keep speed up
+            return { uid, status: "dead" };
         }
     };
 
-    // Run all checks in parallel
+    // Run parallel checks
     const results = await Promise.all(uids.map(uid => checkUID(uid)));
     
     return res.status(200).json(results);
