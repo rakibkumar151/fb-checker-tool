@@ -1,0 +1,13 @@
+{
+  "name": "fb-fast-checker",
+  "version": "1.0.0",
+  "main": "local.js",
+  "type": "module",
+  "scripts": {
+    "start": "node local.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.0"
+  }
+}
