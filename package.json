@@ -4,7 +4,8 @@
   "main": "api/index.js",
   "type": "module",
   "scripts": {
-    "start": "node local.js"
+    "start": "node local.js",
+    "build": "echo 'No build step required'"
   },
   "engines": {
     "node": "18.x"
