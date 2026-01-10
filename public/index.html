@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Line Checker & Downloader</title>
+    <title>Pro Line Checker & Downloader (Fast Mode)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #111827; color: #f3f4f6; }
@@ -20,8 +20,8 @@
 
     <div class="glass w-full max-w-7xl p-6 rounded-xl shadow-2xl">
         <h1 class="text-3xl font-extrabold text-center mb-2 text-blue-500">
-            FB UID LIVE CHECKER -XD   
-     </h1>
+            FB UID LIVE CHECKER - SUPER FAST
+        </h1>
         <p class="text-center text-gray-500 text-xs mb-6 font-mono">Checks UID at start -> Preserves Full Line</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -42,7 +42,7 @@
 
                 <div class="flex gap-2 mt-4">
                     <button onclick="start()" id="btnStart" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
-                        🚀 START CHECK
+                        🚀 START FAST CHECK
                     </button>
                     <button onclick="stop()" id="btnStop" class="hidden flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition">
                         🛑 STOP
@@ -153,7 +153,9 @@
 
             run = true;
             let l = 0, d = 0, p = 0;
-            const BATCH = 50; 
+            
+            // === UPDATE 1: BATCH সাইজ 500 করা হয়েছে ===
+            const BATCH = 500; 
 
             for (let i = 0; i < dataList.length; i += BATCH) {
                 if (!run) break;
@@ -162,7 +164,8 @@
                 const uidsToSend = chunk.map(item => item.uid);
                 
                 try {
-                    const res = await fetch('/api', {
+                    // === UPDATE 2: Localhost URL দেওয়া হয়েছে ===
+                    const res = await fetch('http://localhost:3000/api', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ uids: uidsToSend })
@@ -180,13 +183,17 @@
                                 document.getElementById('out').value += originalItem.original + '\n';
                             } else {
                                 d++;
-                                // ডেড ডেটা শুধু অ্যারেতে যোগ করা (হিডেন থাকবে, কিন্তু ডাউনলোড করা যাবে)
+                                // ডেড ডেটা শুধু অ্যারেতে যোগ করা
                                 deadDataList.push(originalItem.original);
                             }
                         }
                     });
                 } catch (e) {
                     console.error("Error", e);
+                    // সার্ভার বন্ধ থাকলে ইউজারকে জানানো
+                    alert("Error: Make sure 'node local.js' is running!");
+                    stop();
+                    return;
                 }
 
                 p += chunk.length;
@@ -235,11 +242,11 @@
                 return;
             }
 
-            // নাম চাওয়ার জন্য পপআপ
+            // নাম চাওয়ার জন্য পপআপ
             let fileName = prompt(`Total ${type.toUpperCase()} IDs found: ${count}\nEnter file name to save:`, fileNameDefault);
 
             if (fileName) {
-                // নামের শেষে .txt না থাকলে লাগিয়ে দেওয়া হবে
+                // নামের শেষে .txt না থাকলে লাগিয়ে দেওয়া হবে
                 if (!fileName.endsWith('.txt')) {
                     fileName += '.txt';
                 }
