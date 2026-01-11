@@ -3,215 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Vercel Fast Checker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>My Tools Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { background-color: #111827; color: #f3f4f6; }
-        .glass { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(10px); border: 1px solid #374151; }
-        textarea::-webkit-scrollbar { width: 8px; }
-        textarea::-webkit-scrollbar-track { background: #1f2937; }
-        textarea::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
-        .checkbox-wrapper input:checked + div { background-color: #2563eb; border-color: #2563eb; }
-        .checkbox-wrapper input:checked + div svg { display: block; }
+        /* Basic Reset & Layout */
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            height: 100vh; /* Full Screen Height */
+            overflow: hidden; 
+            background: #0f172a; 
+        }
+        
+        /* --- Sidebar Styles (Left Side) --- */
+        .sidebar {
+            width: 260px; /* Width of the menu */
+            background: #1e293b; /* Dark Blue-Grey */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #334155;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        
+        /* Logo Area */
+        .logo {
+            padding: 25px 20px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #3b82f6; /* Blue Accent */
+            border-bottom: 1px solid #334155;
+            text-align: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .logo i { margin-right: 8px; }
+
+        /* Menu List */
+        .menu { 
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+            flex: 1; /* Pushes content up */
+            overflow-y: auto;
+        }
+        
+        /* Menu Items */
+        .menu li {
+            padding: 16px 25px;
+            cursor: pointer;
+            border-bottom: 1px solid #334155;
+            transition: all 0.3s ease;
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            font-size: 15px;
+            color: #cbd5e1;
+        }
+        
+        /* Hover & Active Effects */
+        .menu li:hover {
+            background: #2d3748;
+            padding-left: 30px; /* Slight movement effect */
+            color: white;
+        }
+
+        .menu li.active {
+            background: #3b82f6;
+            color: white;
+            border-left: 5px solid #60a5fa;
+            font-weight: bold;
+        }
+        
+        .menu li i { 
+            width: 20px; 
+            text-align: center; 
+            font-size: 18px;
+        }
+
+        /* Footer in Sidebar (Optional) */
+        .sidebar-footer {
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            border-top: 1px solid #334155;
+        }
+
+        /* --- Main Content Area (Right Side) --- */
+        .content {
+            flex: 1; /* Takes remaining width */
+            background: #0f172a;
+            position: relative;
+        }
+
+        /* Iframe loads the tools here */
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="glass w-full max-w-7xl p-6 rounded-xl shadow-2xl">
-        <h1 class="text-3xl font-extrabold text-center mb-2 text-blue-500">
-            FB FAST CHECKER (VERCEL)
-        </h1>
-        <p class="text-center text-gray-500 text-xs mb-6 font-mono">Serverless Optimized Edition</p>
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-toolbox"></i> Admin Panel
+        </div>
+        
+        <ul class="menu">
+            <li onclick="loadPage('https://google.com', this)" id="menu1">
+                <i class="fas fa-globe"></i> Old Website
+            </li>
+            
+            <li onclick="loadPage('mailbox.html', this)" class="active" id="menu2">
+                <i class="fas fa-envelope-open-text"></i> Bulk Mail Checker
+            </li>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label class="text-xs text-gray-400 font-mono mb-1 block">Paste Full Lines Here</label>
-                <textarea id="in" rows="15" class="w-full p-3 bg-gray-800 rounded-lg text-xs font-mono border border-gray-700 focus:border-blue-500 outline-none placeholder-gray-600 whitespace-pre" placeholder="615xxx|pass|cookie...&#10;1000xxx:pass:2fa..."></textarea>
-                
-                <div class="flex items-center justify-between mt-3 bg-gray-800 p-2 rounded border border-gray-700">
-                    <label class="checkbox-wrapper flex items-center cursor-pointer select-none">
-                        <input type="checkbox" id="removeDupes" class="hidden" checked>
-                        <div class="w-5 h-5 border-2 border-gray-500 rounded mr-2 flex items-center justify-center transition-colors">
-                            <svg class="w-3 h-3 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                        </div>
-                        <span class="text-sm text-gray-300">Remove Duplicates</span>
-                    </label>
-                    <span id="removedCount" class="text-xs text-red-400 font-bold hidden">Removed: 0</span>
-                </div>
+            </ul>
 
-                <div class="flex gap-2 mt-4">
-                    <button onclick="start()" id="btnStart" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
-                        🚀 START CHECK
-                    </button>
-                    <button onclick="stop()" id="btnStop" class="hidden flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition">
-                        🛑 STOP
-                    </button>
-                </div>
-
-                <div class="mt-4 flex justify-between text-xs font-mono text-gray-400">
-                    <span>Valid Lines: <span id="total" class="text-white font-bold">0</span></span>
-                    <span>Checked: <span id="done" class="text-yellow-400">0</span></span>
-                </div>
-                <div class="w-full bg-gray-700 h-2 mt-2 rounded-full overflow-hidden">
-                    <div id="bar" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <div class="flex flex-col h-full">
-                <label class="text-xs text-green-400 font-mono mb-1 block">Live Lines Preview</label>
-                <textarea id="out" rows="12" class="w-full p-3 bg-gray-800 rounded-lg text-green-400 font-mono text-xs border border-green-900 outline-none whitespace-pre" readonly></textarea>
-                
-                <div class="mt-4 grid grid-cols-2 gap-4">
-                    <div class="bg-gray-800/50 p-3 rounded-lg text-center border border-green-500/30">
-                        <div class="text-[10px] text-gray-400 uppercase">Live</div>
-                        <div id="live" class="text-2xl font-bold text-green-500">0</div>
-                    </div>
-                    <div class="bg-gray-800/50 p-3 rounded-lg text-center border border-red-500/30">
-                        <div class="text-[10px] text-gray-400 uppercase">Dead</div>
-                        <div id="dead" class="text-2xl font-bold text-red-500">0</div>
-                    </div>
-                </div>
-
-                <div class="flex gap-2 mt-3">
-                    <button onclick="downloadTxt('live')" class="flex-1 bg-green-700 hover:bg-green-800 text-white py-2 rounded-lg font-bold text-xs transition flex justify-center items-center gap-2">
-                        <span>📥 Download Live</span>
-                        <span id="dlLiveCount" class="bg-green-900 px-2 rounded-full text-[10px]">0</span>
-                    </button>
-                    <button onclick="downloadTxt('dead')" class="flex-1 bg-red-700 hover:bg-red-800 text-white py-2 rounded-lg font-bold text-xs transition flex justify-center items-center gap-2">
-                        <span>📥 Download Dead</span>
-                        <span id="dlDeadCount" class="bg-red-900 px-2 rounded-full text-[10px]">0</span>
-                    </button>
-                </div>
-            </div>
+        <div class="sidebar-footer">
+            &copy; 2024 My Tools
         </div>
     </div>
 
+    <div class="content">
+        <iframe src="mailbox.html" id="mainFrame" title="Content Area"></iframe>
+    </div>
+
     <script>
-        let run = false;
-        let liveDataList = [];
-        let deadDataList = [];
+        function loadPage(url, element) {
+            // 1. Iframe এর সোর্স পরিবর্তন করে নতুন পেজ লোড করা
+            const iframe = document.getElementById('mainFrame');
+            iframe.src = url;
 
-        function parseLines(text) {
-            const isRemoveDupes = document.getElementById('removeDupes').checked;
-            const lines = text.split(/\r?\n/);
-            const validData = [];
-            const seenUIDs = new Set();
-            let duplicates = 0;
-
-            lines.forEach(line => {
-                let cleanLine = line.trim();
-                if (!cleanLine) return;
-                const match = cleanLine.match(/^(\d{4,})/);
-                if (match) {
-                    const uid = match[1];
-                    if (isRemoveDupes) {
-                        if (seenUIDs.has(uid)) { duplicates++; return; }
-                        seenUIDs.add(uid);
-                    }
-                    validData.push({ uid: uid, original: cleanLine });
-                }
+            // 2. মেনুর ডিজাইন আপডেট করা (Active Class সরানো ও যোগ করা)
+            // সব মেনু থেকে active ক্লাস সরিয়ে ফেলা
+            document.querySelectorAll('.menu li').forEach(li => {
+                li.classList.remove('active');
             });
-            
-            const dupLabel = document.getElementById('removedCount');
-            dupLabel.innerText = duplicates > 0 ? `Removed: ${duplicates}` : '';
-            dupLabel.classList.toggle('hidden', duplicates === 0);
-            return validData;
-        }
 
-        async function start() {
-            const rawText = document.getElementById('in').value;
-            const dataList = parseLines(rawText);
-            if (!dataList.length) return alert("No valid lines found!");
-
-            document.getElementById('total').innerText = dataList.length;
-            document.getElementById('done').innerText = '0';
-            document.getElementById('live').innerText = '0';
-            document.getElementById('dead').innerText = '0';
-            document.getElementById('out').value = '';
-            document.getElementById('bar').style.width = '0%';
-            
-            liveDataList = []; deadDataList = []; updateDownloadCounts();
-            document.getElementById('btnStart').classList.add('hidden');
-            document.getElementById('btnStop').classList.remove('hidden');
-
-            run = true;
-            let l = 0, d = 0, p = 0;
-
-            // === VERCEL OPTIMIZATION: BATCH 100 ===
-            // Vercel এর টাইমআউট এড়াতে এবং ফাস্ট রাখতে ১০০ এর বেশি বাড়াবেন না
-            const BATCH = 100; 
-
-            for (let i = 0; i < dataList.length; i += BATCH) {
-                if (!run) break;
-                
-                const chunk = dataList.slice(i, i + BATCH);
-                const uidsToSend = chunk.map(item => item.uid);
-                
-                try {
-                    // === URL CHANGE: Relative Path for Vercel ===
-                    const res = await fetch('/api', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ uids: uidsToSend })
-                    });
-                    
-                    if (!res.ok) throw new Error("Server Error");
-
-                    const results = await res.json();
-                    
-                    results.forEach(r => {
-                        const originalItem = chunk.find(item => item.uid === r.uid);
-                        if (originalItem) {
-                            if (r.status === 'live') {
-                                l++;
-                                liveDataList.push(originalItem.original);
-                                document.getElementById('out').value += originalItem.original + '\n';
-                            } else {
-                                d++;
-                                deadDataList.push(originalItem.original);
-                            }
-                        }
-                    });
-                } catch (e) {
-                    console.error("Batch Failed", e);
-                }
-
-                p += chunk.length;
-                document.getElementById('done').innerText = Math.min(p, dataList.length);
-                document.getElementById('live').innerText = l;
-                document.getElementById('dead').innerText = d;
-                document.getElementById('bar').style.width = Math.round((p / dataList.length) * 100) + "%";
-                updateDownloadCounts();
-            }
-            stop();
-        }
-
-        function stop() {
-            run = false;
-            document.getElementById('btnStart').classList.remove('hidden');
-            document.getElementById('btnStop').classList.add('hidden');
-        }
-
-        function updateDownloadCounts() {
-            document.getElementById('dlLiveCount').innerText = liveDataList.length;
-            document.getElementById('dlDeadCount').innerText = deadDataList.length;
-        }
-
-        function downloadTxt(type) {
-            let data = type === 'live' ? liveDataList : deadDataList;
-            if (data.length === 0) return alert(`No ${type} IDs!`);
-            
-            let fileName = prompt(`Save ${data.length} ${type} IDs as:`, `${type}_ids.txt`);
-            if (fileName) {
-                if (!fileName.endsWith('.txt')) fileName += '.txt';
-                const blob = new Blob([data.join('\n')], { type: 'text/plain' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = fileName;
-                document.body.appendChild(a); a.click();
-                document.body.removeChild(a);
-            }
+            // যেটাতে ক্লিক করা হয়েছে, সেটাতে active ক্লাস যোগ করা
+            element.classList.add('active');
         }
     </script>
+
 </body>
 </html>
