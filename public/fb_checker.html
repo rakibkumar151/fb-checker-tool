@@ -19,9 +19,9 @@
 
     <div class="glass w-full max-w-7xl p-6 rounded-xl shadow-2xl">
         <h1 class="text-3xl font-extrabold text-center mb-2 text-blue-500">
-            FB FAST CHECKER (VERCEL)
+            FB UID LIVE CHECKER - XD   
         </h1>
-        <p class="text-center text-gray-500 text-xs mb-6 font-mono">Serverless Optimized Edition</p>
+        <p class="text-center text-gray-500 text-xs mb-6 font-mono">Checks UID at start -> Preserves Full Line</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -145,9 +145,6 @@
                 const uidsToSend = chunk.map(item => item.uid);
                 
                 try {
-                    // === পরিবর্তন এখানে করা হয়েছে ===
-                    // আগে ছিল: fetch('/api', ...)
-                    // এখন করা হলো: fetch('/api/fb-check', ...)
                     const res = await fetch('/api/fb-check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -158,8 +155,11 @@
 
                     const results = await res.json();
                     
+                    // --- এখানে FIX করা হয়েছে ---
                     results.forEach(r => {
-                        const originalItem = chunk.find(item => item.uid === r.uid);
+                        // String() ব্যবহার করে UID ম্যাচিং নিশ্চিত করা হচ্ছে
+                        const originalItem = chunk.find(item => String(item.uid) === String(r.uid));
+                        
                         if (originalItem) {
                             if (r.status === 'live') {
                                 l++;
@@ -169,8 +169,12 @@
                                 d++;
                                 deadDataList.push(originalItem.original);
                             }
+                        } else {
+                            // যদি ম্যাচ না পাওয়া যায়, তবে সেটিকে Dead হিসেবে ধরা হবে
+                            d++; 
                         }
                     });
+
                 } catch (e) {
                     console.error("Batch Failed", e);
                 }
