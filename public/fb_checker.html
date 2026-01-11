@@ -136,7 +136,7 @@
 
             run = true;
             let l = 0, d = 0, p = 0;
-            const BATCH = 100; 
+            const BATCH = 50; 
 
             for (let i = 0; i < dataList.length; i += BATCH) {
                 if (!run) break;
@@ -145,7 +145,9 @@
                 const uidsToSend = chunk.map(item => item.uid);
                 
                 try {
-                    // এটি এখন আপনার সার্ভারে FB চেকার লজিক খুঁজবে
+                    // === পরিবর্তন এখানে করা হয়েছে ===
+                    // আগে ছিল: fetch('/api', ...)
+                    // এখন করা হলো: fetch('/api/fb-check', ...)
                     const res = await fetch('/api/fb-check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
