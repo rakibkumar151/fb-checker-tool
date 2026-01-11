@@ -1,59 +1,80 @@
-import fetch from 'node-fetch';
-import https from 'https';
+const express = require('express');
+const axios = require('axios');
+const cors = require('cors');
 
-// Keep-Alive Agent for Fast Connection on Vercel
-const agent = new https.Agent({
-    keepAlive: true,
-    keepAliveMsecs: 1000,
-    maxSockets: 1000
+const app = express();
+
+// কনফিগারেশন
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// টোকেন জেনারেট ফাংশন
+async function getAccessToken(clientId, refreshToken) {
+    const params = new URLSearchParams();
+    params.append('client_id', clientId);
+    params.append('grant_type', 'refresh_token');
+    params.append('refresh_token', refreshToken);
+
+    try {
+        const response = await axios.post('https://login.microsoftonline.com/common/oauth2/v2.0/token', params);
+        return response.data.access_token;
+    } catch (error) {
+        return null; 
+    }
+}
+
+// API 1: ইমেইল লিস্ট
+// Vercel এ রাউট '/api/...' দিয়ে শুরু করতে হয়
+app.post('/api/get-emails', async (req, res) => {
+    const { client_id, refresh_token, skip } = req.body;
+    const mailLimit = 5; 
+    const skipCount = parseInt(skip) || 0; 
+
+    if (!client_id || !refresh_token) return res.status(400).send({ error: 'Missing credentials' });
+
+    try {
+        const accessToken = await getAccessToken(client_id, refresh_token);
+        if (!accessToken) return res.status(401).send({ error: 'Bad Token' });
+
+        const mailResponse = await axios.get('https://graph.microsoft.com/v1.0/me/messages', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: {
+                '$top': mailLimit, 
+                '$skip': skipCount, 
+                '$select': 'id,subject,from,receivedDateTime,bodyPreview,isRead', 
+                '$orderby': 'receivedDateTime DESC'
+            }
+        });
+
+        res.json({ emails: mailResponse.data.value });
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
 });
 
-export default async function handler(req, res) {
-    // CORS Setup
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// API 2: ইমেইল ডিটেইলস
+app.post('/api/get-email-details', async (req, res) => {
+    const { client_id, refresh_token, message_id } = req.body;
 
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+    if (!client_id || !refresh_token || !message_id) {
+        return res.status(400).send({ error: 'Missing data' });
     }
 
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+    try {
+        const accessToken = await getAccessToken(client_id, refresh_token);
+        if (!accessToken) return res.status(401).send({ error: 'Bad Token' });
 
-    const { uids } = req.body;
-    if (!uids || !Array.isArray(uids)) return res.status(400).json({ error: 'No UIDs' });
+        const mailResponse = await axios.get(`https://graph.microsoft.com/v1.0/me/messages/${message_id}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: { '$select': 'body,subject,from,receivedDateTime' }
+        });
 
-    const checkUID = async (uid) => {
-        try {
-            // 2.5 seconds timeout per request to prevent Vercel freeze
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 2500);
+        res.json(mailResponse.data);
+    } catch (error) {
+        res.status(500).send({ error: 'Failed to fetch body' });
+    }
+});
 
-            const response = await fetch(`https://graph.facebook.com/${uid}/picture?type=normal`, {
-                method: 'GET',
-                redirect: 'manual',
-                agent: agent,
-                signal: controller.signal,
-                headers: { "User-Agent": "Mozilla/5.0" }
-            });
-
-            clearTimeout(timeout);
-
-            const location = response.headers.get('location') || "";
-            
-            if (response.status === 302 && location.includes("scontent")) {
-                return { uid, status: "live" };
-            }
-            return { uid, status: "dead" };
-        } catch (error) {
-            return { uid, status: "dead" };
-        }
-    };
-
-    // Run parallel checks
-    const results = await Promise.all(uids.map(uid => checkUID(uid)));
-    
-    return res.status(200).json(results);
-}
+// Vercel Export
+module.exports = app;
