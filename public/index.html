@@ -7,150 +7,61 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* Basic Reset & Layout */
-        body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Segoe UI', sans-serif; 
-            display: flex; 
-            height: 100vh; /* Full Screen Height */
-            overflow: hidden; 
-            background: #0f172a; 
-        }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; background: #0f172a; }
         
-        /* --- Sidebar Styles (Left Side) --- */
-        .sidebar {
-            width: 260px; /* Width of the menu */
-            background: #1e293b; /* Dark Blue-Grey */
-            color: white;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #334155;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
-            z-index: 10;
-        }
+        /* Sidebar */
+        .sidebar { width: 260px; background: #1e293b; color: white; display: flex; flex-direction: column; border-right: 1px solid #334155; box-shadow: 4px 0 15px rgba(0,0,0,0.3); z-index: 10; }
+        .logo { padding: 25px 20px; font-size: 22px; font-weight: bold; color: #3b82f6; border-bottom: 1px solid #334155; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
+        .menu { list-style: none; padding: 0; margin: 0; flex: 1; overflow-y: auto; }
+        .menu li { padding: 16px 25px; cursor: pointer; border-bottom: 1px solid #334155; transition: all 0.3s ease; display: flex; align-items: center; gap: 12px; font-size: 15px; color: #cbd5e1; }
+        .menu li:hover { background: #2d3748; padding-left: 30px; color: white; }
+        .menu li.active { background: #3b82f6; color: white; border-left: 5px solid #60a5fa; font-weight: bold; }
+        .menu li i { width: 20px; text-align: center; font-size: 18px; }
+        .sidebar-footer { padding: 15px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #334155; }
+
+        /* Content */
+        .content { flex: 1; background: #0f172a; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; display: block; }
         
-        /* Logo Area */
-        .logo {
-            padding: 25px 20px;
-            font-size: 22px;
-            font-weight: bold;
-            color: #3b82f6; /* Blue Accent */
-            border-bottom: 1px solid #334155;
-            text-align: center;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .logo i { margin-right: 8px; }
-
-        /* Menu List */
-        .menu { 
-            list-style: none; 
-            padding: 0; 
-            margin: 0; 
-            flex: 1; /* Pushes content up */
-            overflow-y: auto;
-        }
-        
-        /* Menu Items */
-        .menu li {
-            padding: 16px 25px;
-            cursor: pointer;
-            border-bottom: 1px solid #334155;
-            transition: all 0.3s ease;
-            display: flex; 
-            align-items: center; 
-            gap: 12px;
-            font-size: 15px;
-            color: #cbd5e1;
-        }
-        
-        /* Hover & Active Effects */
-        .menu li:hover {
-            background: #2d3748;
-            padding-left: 30px; /* Slight movement effect */
-            color: white;
-        }
-
-        .menu li.active {
-            background: #3b82f6;
-            color: white;
-            border-left: 5px solid #60a5fa;
-            font-weight: bold;
-        }
-        
-        .menu li i { 
-            width: 20px; 
-            text-align: center; 
-            font-size: 18px;
-        }
-
-        /* Footer in Sidebar (Optional) */
-        .sidebar-footer {
-            padding: 15px;
-            text-align: center;
-            font-size: 12px;
-            color: #64748b;
-            border-top: 1px solid #334155;
-        }
-
-        /* --- Main Content Area (Right Side) --- */
-        .content {
-            flex: 1; /* Takes remaining width */
-            background: #0f172a;
-            position: relative;
-        }
-
-        /* Iframe loads the tools here */
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
+        /* Placeholder message */
+        .placeholder { display: none; color: white; text-align: center; margin-top: 20%; font-size: 18px; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="logo">
-            <i class="fas fa-toolbox"></i> Admin Panel
-        </div>
+        <div class="logo"><i class="fas fa-toolbox"></i> Admin Panel</div>
         
         <ul class="menu">
-            <li onclick="loadPage('https://google.com', this)" id="menu1">
-                <i class="fas fa-globe"></i> Old Website
+            <li onclick="openInNewTab('https://google.com')">
+                <i class="fas fa-external-link-alt"></i> Old Website <small>(New Tab)</small>
             </li>
             
-            <li onclick="loadPage('mailbox.html', this)" class="active" id="menu2">
+            <li onclick="loadInternalPage('mailbox.html', this)" class="active">
                 <i class="fas fa-envelope-open-text"></i> Bulk Mail Checker
             </li>
+        </ul>
 
-            </ul>
-
-        <div class="sidebar-footer">
-            &copy; 2024 My Tools
-        </div>
+        <div class="sidebar-footer">&copy; 2026 My Tools</div>
     </div>
 
     <div class="content">
-        <iframe src="mailbox.html" id="mainFrame" title="Content Area"></iframe>
+        <iframe src="mailbox.html" id="mainFrame"></iframe>
     </div>
 
     <script>
-        function loadPage(url, element) {
-            // 1. Iframe এর সোর্স পরিবর্তন করে নতুন পেজ লোড করা
-            const iframe = document.getElementById('mainFrame');
-            iframe.src = url;
+        // ফাংশন ১: অ্যাপের ভেতরে পেজ লোড করার জন্য
+        function loadInternalPage(url, element) {
+            document.getElementById('mainFrame').src = url;
+            
+            // Active Class Change
+            document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
+            if(element) element.classList.add('active');
+        }
 
-            // 2. মেনুর ডিজাইন আপডেট করা (Active Class সরানো ও যোগ করা)
-            // সব মেনু থেকে active ক্লাস সরিয়ে ফেলা
-            document.querySelectorAll('.menu li').forEach(li => {
-                li.classList.remove('active');
-            });
-
-            // যেটাতে ক্লিক করা হয়েছে, সেটাতে active ক্লাস যোগ করা
-            element.classList.add('active');
+        // ফাংশন ২: বাইরের ওয়েবসাইট নতুন ট্যাবে খোলার জন্য (যাতে এরর না আসে)
+        function openInNewTab(url) {
+            window.open(url, '_blank');
         }
     </script>
 
