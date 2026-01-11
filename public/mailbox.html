@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Mail Box</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS Styles */
+        :root {
+            --bg-dark: #0f172a; --card-bg: #1e293b; --text-main: #f1f5f9; --text-muted: #94a3b8;
+            --accent: #3b82f6; --success: #10b981; --danger: #ef4444; --border: #334155;
+            --highlight-bg: rgba(59, 130, 246, 0.15); --highlight-border: rgba(59, 130, 246, 0.4);
+        }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .input-panel { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        h2 { margin: 0 0 15px 0; color: var(--accent); font-size: 22px; }
+        
+        textarea { 
+            width: 100%; height: 200px; /* Big Size */
+            background: #020617; color: #e2e8f0; border: 1px solid var(--border); 
+            padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; 
+            box-sizing: border-box; resize: vertical; 
+        }
+        textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+        
+        .controls { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center; margin-top: 15px; }
+        .status { font-weight: bold; color: var(--text-muted); font-size: 14px; }
+        .btn-group { display: flex; gap: 10px; align-items: center; }
+        button { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+
+        /* Toggle Switch */
+        .toggle-container { display: flex; align-items: center; gap: 10px; background: #334155; padding: 8px 15px; border-radius: 20px; border: 1px solid #475569; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #64748b; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .toggle-label { font-size: 13px; font-weight: bold; color: white; }
+
+        .load-more-container { text-align: center; margin: 30px 0; display: none; }
+        .btn-load-more { background: #334155; color: white; padding: 12px 30px; font-size: 16px; width: 100%; max-width: 300px; }
+        .btn-load-more:hover { background: var(--accent); }
+
+        .mail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+        .mail-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; position: relative; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .mail-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 10px 15px rgba(0,0,0,0.3); }
+        
+        @keyframes flashGreen { 0% { border-color: var(--border); } 50% { border-color: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); } 100% { border-color: var(--border); } }
+        .updated-flash { animation: flashGreen 1.5s ease-in-out; }
+
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #334155; }
+        .acc-email-box { background: var(--highlight-bg); border: 1px solid var(--highlight-border); color: #60a5fa; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; max-width: 75%; }
+        .acc-email-box:hover { background: rgba(59, 130, 246, 0.3); }
+        .acc-email-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .msg-time { font-size: 11px; color: #64748b; white-space: nowrap; }
+        
+        .card-body { flex: 1; margin-bottom: 15px; }
+        .msg-from { font-weight: bold; font-size: 14px; color: #e2e8f0; margin-bottom: 4px; display: block; }
+        .msg-subject { color: var(--accent); font-size: 13px; margin-bottom: 6px; display: block; font-weight: 500; }
+        .msg-preview { font-size: 12px; color: #94a3b8; line-height: 1.4; }
+
+        .otp-section { background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--success); padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .otp-code { font-family: monospace; font-size: 16px; font-weight: bold; color: var(--success); letter-spacing: 1px; }
+        .btn-copy-otp { background: none; color: var(--text-muted); padding: 4px; font-size: 12px; cursor: pointer; border: none; }
+        
+        .card-footer { display: flex; justify-content: flex-end; align-items: center; gap: 10px; border-top: 1px solid #334155; padding-top: 10px; }
+        .btn-view { background: #334155; color: white; padding: 10px 0; border-radius: 6px; font-size: 14px; width: 100%; text-align: center; font-weight: 600; }
+        .btn-view:hover { background: var(--accent); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; backdrop-filter: blur(5px); }
+        .modal-box { background: white; width: 95%; max-width: 900px; height: 90%; margin: 2% auto; border-radius: 8px; display: flex; flex-direction: column; }
+        .modal-header { padding: 12px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; color: #333; }
+        .modal-body { flex: 1; position: relative; background: white; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .close-btn { background: var(--danger); padding: 6px 12px; color: white; border-radius: 4px; border:none; cursor: pointer; }
+        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; justify-content: center; align-items: center; color: #333; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="input-panel">
+        <h2><i class="fas fa-cubes"></i> Bulk Mail Box</h2>
+        <textarea id="rawInput" placeholder="Paste account list here...
+email|password|refresh_token|client_id"></textarea>
+        
+        <div class="controls">
+            <div class="toggle-container">
+                <label class="switch">
+                    <input type="checkbox" id="autoRefreshCheck" onchange="resetAndStart()">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">🔴 Auto Refresh (Live)</span>
+            </div>
+
+            <div class="btn-group">
+                <span class="status" id="statusText">Ready</span>
+                <button class="btn-danger" onclick="clearGrid()"><i class="fas fa-trash"></i> Clear</button>
+                <button class="btn-primary" onclick="startProcess()"><i class="fas fa-play"></i> Start Check</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mail-grid" id="mailGrid"></div>
+
+    <div class="load-more-container" id="loadMoreDiv">
+        <button class="btn-load-more" onclick="loadMoreMails()"><i class="fas fa-arrow-down"></i> Load Next 5 Mails</button>
+    </div>
+</div>
+
+<div id="mailModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 style="margin:0; font-size:16px;" id="modalSubject">Subject</h3>
+            <button class="close-btn" onclick="closeModal()">Close</button>
+        </div>
+        <div class="modal-body">
+            <div id="modalLoading" class="loading-overlay">Loading...</div>
+            <iframe id="emailFrame" sandbox="allow-popups allow-popups-to-escape-sandbox allow-scripts allow-top-navigation-by-user-activation"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+    // VERCEL URL UPDATE
+    const API_URL = '/api'; 
+    
+    // Global State
+    let activeAccounts = []; 
+    let fetchedMailIds = new Set(); 
+    let accountLastMailMap = new Map();
+    let globalSkip = 0; 
+    let autoRefreshInterval = null;
+
+    // Start Button Logic
+    function startProcess() {
+        const rawInput = document.getElementById('rawInput').value.trim();
+        const isLive = document.getElementById('autoRefreshCheck').checked;
+        
+        if (!rawInput) { alert("Please input accounts!"); return; }
+
+        document.getElementById('mailGrid').innerHTML = '';
+        document.getElementById('loadMoreDiv').style.display = 'none';
+        fetchedMailIds.clear();
+        accountLastMailMap.clear();
+        if(autoRefreshInterval) clearInterval(autoRefreshInterval);
+        globalSkip = 0;
+
+        activeAccounts = rawInput.split(/\r?\n/).filter(line => line.length > 10);
+        if(activeAccounts.length === 0) return;
+
+        if (isLive) {
+            runLiveMode();
+        } else {
+            runNormalMode();
+        }
+    }
+
+    // --- MODE 1: NORMAL MODE ---
+    async function runNormalMode() {
+        document.getElementById('statusText').innerText = `Fetching 5 mails for ${activeAccounts.length} accounts...`;
+        await fetchNormalBatch(0);
+        document.getElementById('loadMoreDiv').style.display = 'block';
+        document.getElementById('statusText').innerText = "Normal Check Done.";
+    }
+
+    async function loadMoreMails() {
+        globalSkip += 5; // Increase Skip
+        const btn = document.querySelector('.btn-load-more');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Loading...`;
+        btn.disabled = true;
+
+        await fetchNormalBatch(globalSkip);
+        
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        document.getElementById('statusText').innerText = `Loaded more mails. Total: ${fetchedMailIds.size}`;
+    }
+
+    async function fetchNormalBatch(skip) {
+        let newMailsCount = 0;
+        const promises = activeAccounts.map(async (line) => {
+            const parts = line.split('|');
+            const res = await getMailsAPI(parts[2], parts[3], skip);
+            
+            if (res && res.emails && res.emails.length > 0) {
+                res.emails.forEach(mail => {
+                    const safeId = btoa(mail.id).replace(/=/g,'');
+                    if (!fetchedMailIds.has(mail.id) && !document.getElementById('card-' + safeId)) {
+                        mail.auth = { client_id: parts[3], refresh_token: parts[2] };
+                        createCard(parts[0], mail, false); 
+                        fetchedMailIds.add(mail.id);
+                        newMailsCount++;
+                    }
+                });
+            }
+        });
+        await Promise.all(promises);
+
+        if (newMailsCount === 0 && skip > 0) {
+            alert("No more old emails found!");
+        }
+    }
+
+    // --- MODE 2: LIVE MODE ---
+    async function runLiveMode() {
+        document.getElementById('statusText').innerText = "Live Monitoring Started...";
+        
+        const promises = activeAccounts.map(async (line) => {
+            const parts = line.split('|');
+            const res = await getMailsAPI(parts[2], parts[3], 0);
+            if (res && res.emails && res.emails.length > 0) {
+                const mail = res.emails[0];
+                accountLastMailMap.set(parts[0], mail.id);
+                mail.auth = { client_id: parts[3], refresh_token: parts[2] };
+                createCard(parts[0], mail, true);
+            }
+        });
+        await Promise.all(promises);
+
+        startAutoRefreshLoop();
+    }
+
+    function startAutoRefreshLoop() {
+        autoRefreshInterval = setInterval(async () => {
+            for (let line of activeAccounts) {
+                const parts = line.split('|');
+                const email = parts[0];
+                const res = await getMailsAPI(parts[2], parts[3], 0);
+                
+                if (res && res.emails && res.emails.length > 0) {
+                    const latestMail = res.emails[0];
+                    const storedMailId = accountLastMailMap.get(email);
+
+                    if (latestMail.id !== storedMailId) {
+                        accountLastMailMap.set(email, latestMail.id);
+                        latestMail.auth = { client_id: parts[3], refresh_token: parts[2] };
+                        
+                        const safeId = btoa(email).replace(/=/g,''); 
+                        const oldCard = document.getElementById('card-' + safeId);
+                        if(oldCard) oldCard.remove();
+
+                        createCard(email, latestMail, true);
+                    }
+                }
+            }
+        }, 5000);
+    }
+
+    // API Helper
+    async function getMailsAPI(refreshToken, clientId, skip) {
+        try {
+            const res = await fetch(`${API_URL}/get-emails`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client_id: clientId, refresh_token: refreshToken, skip: parseInt(skip) })
+            });
+            return await res.json();
+        } catch (e) { return null; }
+    }
+
+    // Card Creator
+    function createCard(email, mail, isLiveMode) {
+        const grid = document.getElementById('mailGrid');
+        const card = document.createElement('div');
+        card.className = 'mail-card';
+        
+        const safeId = isLiveMode ? btoa(email).replace(/=/g,'') : btoa(mail.id).replace(/=/g,'');
+        card.id = 'card-' + safeId;
+
+        if(isLiveMode) card.classList.add('updated-flash');
+        
+        const codeMatch = mail.bodyPreview ? mail.bodyPreview.match(/\b\d{4,8}\b/) : null;
+        card.innerHTML = generateCardHTML(email, mail, codeMatch ? codeMatch[0] : null);
+
+        if (isLiveMode) {
+            grid.prepend(card);
+        } else {
+            grid.appendChild(card);
+        }
+    }
+
+    function generateCardHTML(email, mail, code) {
+        const date = new Date(mail.receivedDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const subject = mail.subject ? mail.subject.substring(0, 40) : "(No Subject)";
+        
+        let otpSection = '';
+        if (code) {
+            otpSection = `<div class="otp-section"><span class="otp-code">${code}</span><button class="btn-copy-otp" onclick="copyText(event, '${code}')"><i class="fas fa-copy"></i></button></div>`;
+        }
+
+        return `
+            <div class="card-header">
+                <div class="acc-email-box" onclick="copyText(event, '${email}')">
+                    <i class="fas fa-copy"></i> <span class="acc-email-text">${email}</span>
+                </div>
+                <span class="msg-time">${date}</span>
+            </div>
+            <div class="card-body">
+                <span class="msg-from">${mail.from?.emailAddress?.name || 'Unknown'}</span>
+                <span class="msg-subject">${subject}</span>
+            </div>
+            ${otpSection}
+            <div class="card-footer">
+                <button class="btn-view" onclick="openModal(event, '${mail.id}', '${mail.auth.client_id}', '${mail.auth.refresh_token}', '${subject}')">View Full Email</button>
+            </div>
+        `;
+    }
+
+    async function openModal(e, msgId, clientId, refreshToken, subject) {
+        e.stopPropagation();
+        const modal = document.getElementById('mailModal');
+        const iframe = document.getElementById('emailFrame');
+        const loader = document.getElementById('modalLoading');
+        
+        document.getElementById('modalSubject').innerText = subject;
+        modal.style.display = 'block';
+        iframe.style.display = 'none';
+        iframe.removeAttribute('srcdoc');
+        loader.style.display = 'flex';
+
+        try {
+            const res = await fetch(`${API_URL}/get-email-details`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client_id: clientId, refresh_token: refreshToken, message_id: msgId })
+            });
+            const data = await res.json();
+            const safeContent = `<base target="_blank"><style>body{font-family:sans-serif; padding:20px;}</style>` + data.body.content;
+            iframe.srcdoc = safeContent;
+            iframe.onload = () => { loader.style.display = 'none'; iframe.style.display = 'block'; };
+        } catch (error) { loader.innerText = "Error loading email."; }
+    }
+
+    function closeModal() { document.getElementById('mailModal').style.display = 'none'; }
+    
+    function copyText(e, text) {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text);
+        const el = e.currentTarget;
+        const orgHtml = el.innerHTML;
+        if(el.classList.contains('acc-email-box')) el.innerHTML = `<i class="fas fa-check"></i> Copied!`;
+        else el.innerHTML = `<i class="fas fa-check"></i>`;
+        setTimeout(() => el.innerHTML = orgHtml, 1500);
+    }
+
+    function clearGrid() {
+        document.getElementById('mailGrid').innerHTML = '';
+        document.getElementById('loadMoreDiv').style.display = 'none';
+        activeAccounts = [];
+        fetchedMailIds.clear();
+        accountLastMailMap.clear();
+        if(autoRefreshInterval) clearInterval(autoRefreshInterval);
+        document.getElementById('statusText').innerText = "Ready";
+    }
+
+    function resetAndStart() {
+        if(document.getElementById('autoRefreshCheck').checked) {
+             document.getElementById('loadMoreDiv').style.display = 'none';
+        }
+    }
+
+    window.onclick = function(event) { if (event.target == document.getElementById('mailModal')) closeModal(); }
+</script>
+
+</body>
+</html>
