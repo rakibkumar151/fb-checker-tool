@@ -18,7 +18,7 @@
         h2 { margin: 0 0 15px 0; color: var(--accent); font-size: 22px; }
         
         textarea { 
-            width: 100%; height: 200px; /* Big Size */
+            width: 100%; height: 200px; 
             background: #020617; color: #e2e8f0; border: 1px solid var(--border); 
             padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; 
             box-sizing: border-box; resize: vertical; 
@@ -27,6 +27,8 @@
         
         .controls { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center; margin-top: 15px; }
         .status { font-weight: bold; color: var(--text-muted); font-size: 14px; }
+        .last-check { font-size: 12px; color: #fbbf24; margin-left: 10px; font-weight: normal; } /* New Style */
+
         .btn-group { display: flex; gap: 10px; align-items: center; }
         button { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; }
         .btn-primary { background: var(--accent); color: white; }
@@ -97,11 +99,13 @@ email|password|refresh_token|client_id"></textarea>
                     <input type="checkbox" id="autoRefreshCheck" onchange="resetAndStart()">
                     <span class="slider"></span>
                 </label>
-                <span class="toggle-label">🔴 Auto Refresh (Live)</span>
+                <span class="toggle-label">🔴 Auto Refresh</span>
             </div>
 
             <div class="btn-group">
-                <span class="status" id="statusText">Ready</span>
+                <div>
+                    <span class="status" id="statusText">Ready</span>
+                    <span id="lastCheckTime" class="last-check"></span> </div>
                 <button class="btn-danger" onclick="clearGrid()"><i class="fas fa-trash"></i> Clear</button>
                 <button class="btn-primary" onclick="startProcess()"><i class="fas fa-play"></i> Start Check</button>
             </div>
@@ -129,7 +133,6 @@ email|password|refresh_token|client_id"></textarea>
 </div>
 
 <script>
-    // VERCEL URL UPDATE
     const API_URL = '/api'; 
     
     // Global State
@@ -148,6 +151,7 @@ email|password|refresh_token|client_id"></textarea>
 
         document.getElementById('mailGrid').innerHTML = '';
         document.getElementById('loadMoreDiv').style.display = 'none';
+        document.getElementById('lastCheckTime').innerText = ''; // Reset time
         fetchedMailIds.clear();
         accountLastMailMap.clear();
         if(autoRefreshInterval) clearInterval(autoRefreshInterval);
@@ -172,7 +176,7 @@ email|password|refresh_token|client_id"></textarea>
     }
 
     async function loadMoreMails() {
-        globalSkip += 5; // Increase Skip
+        globalSkip += 5; 
         const btn = document.querySelector('.btn-load-more');
         const originalText = btn.innerHTML;
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Loading...`;
@@ -230,7 +234,12 @@ email|password|refresh_token|client_id"></textarea>
     }
 
     function startAutoRefreshLoop() {
+        // টাইম দেখানোর জন্য
+        updateLastCheckTime();
+
         autoRefreshInterval = setInterval(async () => {
+            updateLastCheckTime(); // আপডেট টাইম
+
             for (let line of activeAccounts) {
                 const parts = line.split('|');
                 const email = parts[0];
@@ -240,7 +249,9 @@ email|password|refresh_token|client_id"></textarea>
                     const latestMail = res.emails[0];
                     const storedMailId = accountLastMailMap.get(email);
 
+                    // নতুন মেইল আসলে আপডেট হবে
                     if (latestMail.id !== storedMailId) {
+                        console.log("New mail found!");
                         accountLastMailMap.set(email, latestMail.id);
                         latestMail.auth = { client_id: parts[3], refresh_token: parts[2] };
                         
@@ -252,7 +263,12 @@ email|password|refresh_token|client_id"></textarea>
                     }
                 }
             }
-        }, 5000);
+        }, 5000); // 5 সেকেন্ড পর পর চেক করবে
+    }
+
+    function updateLastCheckTime() {
+        const now = new Date();
+        document.getElementById('lastCheckTime').innerText = `Last checked: ${now.toLocaleTimeString()}`;
     }
 
     // API Helper
@@ -353,6 +369,7 @@ email|password|refresh_token|client_id"></textarea>
     function clearGrid() {
         document.getElementById('mailGrid').innerHTML = '';
         document.getElementById('loadMoreDiv').style.display = 'none';
+        document.getElementById('lastCheckTime').innerText = '';
         activeAccounts = [];
         fetchedMailIds.clear();
         accountLastMailMap.clear();
